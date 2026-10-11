@@ -2,10 +2,31 @@
 var noteForm = document.getElementById("note-form");
 var noteInput = document.getElementById("note-input");
 var categorySelect = document.getElementById("category-select");
+var errorMessage = document.getElementById("error-message");
+var noteCount = document.getElementById("note-count");
 var notesList = document.getElementById("notes-list");
 
 // All notes live in this array
 var notes = [];
+
+// Show how many notes there are
+function updateCount() {
+  if (notes.length === 0) {
+    noteCount.textContent = "You have no notes yet.";
+  } else if (notes.length === 1) {
+    noteCount.textContent = "You have 1 note.";
+  } else {
+    noteCount.textContent = "You have " + notes.length + " notes.";
+  }
+}
+
+// Remove the note with this id
+function deleteNote(id) {
+  notes = notes.filter(function (note) {
+    return note.id !== id;
+  });
+  renderNotes();
+}
 
 // Draw every note on the page
 function renderNotes() {
@@ -34,7 +55,9 @@ function renderNotes() {
     deleteBtn.className = "delete-btn";
     deleteBtn.type = "button";
     deleteBtn.textContent = "Delete";
-    deleteBtn.setAttribute("data-id", note.id);
+    deleteBtn.addEventListener("click", function () {
+      deleteNote(note.id);
+    });
 
     meta.appendChild(label);
     meta.appendChild(date);
@@ -44,6 +67,8 @@ function renderNotes() {
     li.appendChild(meta);
     notesList.appendChild(li);
   });
+
+  updateCount();
 }
 
 // Add a note when the form is submitted
@@ -51,9 +76,18 @@ noteForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
   var text = noteInput.value.trim();
+
+  // Validation
   if (text === "") {
+    errorMessage.textContent = "Please type a note first.";
     return;
   }
+  if (text.length > 200) {
+    errorMessage.textContent = "Notes must be 200 characters or fewer.";
+    return;
+  }
+
+  errorMessage.textContent = "";
 
   var note = {
     id: Date.now(),
@@ -68,3 +102,5 @@ noteForm.addEventListener("submit", function (event) {
   noteInput.value = "";
   noteInput.focus();
 });
+
+renderNotes();
