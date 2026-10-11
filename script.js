@@ -3,11 +3,35 @@ var noteForm = document.getElementById("note-form");
 var noteInput = document.getElementById("note-input");
 var categorySelect = document.getElementById("category-select");
 var errorMessage = document.getElementById("error-message");
+var searchInput = document.getElementById("search-input");
 var noteCount = document.getElementById("note-count");
 var notesList = document.getElementById("notes-list");
 
+var STORAGE_KEY = "quicknotesNotes";
+
 // All notes live in this array
 var notes = [];
+
+// Save the notes to localStorage
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+// Load the notes from localStorage
+function loadNotes() {
+  var saved = localStorage.getItem(STORAGE_KEY);
+  if (saved === null) {
+    return;
+  }
+  try {
+    var parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) {
+      notes = parsed;
+    }
+  } catch (error) {
+    notes = [];
+  }
+}
 
 // Show how many notes there are
 function updateCount() {
@@ -25,14 +49,28 @@ function deleteNote(id) {
   notes = notes.filter(function (note) {
     return note.id !== id;
   });
+  saveNotes();
   renderNotes();
 }
 
-// Draw every note on the page
+// Draw the notes that match the search box
 function renderNotes() {
   notesList.innerHTML = "";
 
-  notes.forEach(function (note) {
+  var term = searchInput.value.trim().toLowerCase();
+
+  var visibleNotes = notes.filter(function (note) {
+    return note.text.toLowerCase().indexOf(term) !== -1;
+  });
+
+  if (visibleNotes.length === 0 && term !== "") {
+    var empty = document.createElement("li");
+    empty.className = "no-results";
+    empty.textContent = "No notes match your search.";
+    notesList.appendChild(empty);
+  }
+
+  visibleNotes.forEach(function (note) {
     var li = document.createElement("li");
     li.className = "note-card category-" + note.category.toLowerCase();
 
@@ -97,10 +135,16 @@ noteForm.addEventListener("submit", function (event) {
   };
 
   notes.push(note);
+  saveNotes();
   renderNotes();
 
   noteInput.value = "";
   noteInput.focus();
 });
 
+// Search as the user types
+searchInput.addEventListener("input", renderNotes);
+
+// On page load: get the saved notes and draw them
+loadNotes();
 renderNotes();
